@@ -18,15 +18,17 @@ pz=pi(1,:);
 ns=pz*z;
 %%%%%%%question 4%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 a_min=0;
-a_max=5;
-a_num=500;
+a_max=300; 
+a_num=100;
 a=linspace(a_min,a_max,a_num);
 %%%%%%question 5%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 nd=ns;
-k_guess=2;
-
+k_max=100;
+k_min=50;
 d=1;
 while d>=0.001;
+
+k_guess=(k_max+k_min)/2;
 r=alpha*k_guess^(alpha-1)*nd^(1-alpha)+1-delta;
 w=(1-alpha)*k_guess^alpha*nd^(-alpha);
 
@@ -46,10 +48,8 @@ v_tol = 1;
         
         % CHOOSE HIGHEST VALUE (ASSOCIATED WITH a' CHOICE)
         [vfn,pol_indx]=max(vf,[],2);
-        v_tol=[max(abs(vfn(:,:,1)' - v_guess(1,:))) ; max(abs(vfn(:,:,2)' - v_guess(2,:)));...
-            max(abs(vfn(:,:,3)' - v_guess(3,:)));max(abs(vfn(:,:,4)' - v_guess(4,:)));...
-            max(abs(vfn(:,:,5)' - v_guess(5,:)))];
-        v_guess=[vfn(:,:,1)';vfn(:,:,2)';vfn(:,:,3)';vfn(:,:,4)';vfn(:,:,5)'];
+        v_tol=max(abs(vfn(:)-v_guess(:)));
+        v_guess=shiftdim(vfn,2);
     end;
   % KEEP DECSISION RULE
     pol_indx=permute(pol_indx, [3 1 2]);
@@ -67,29 +67,20 @@ v_tol = 1;
         
        for ii = 1:length(z_ind)
         apr_ind = pol_indx(z_ind(ii), a_ind(ii)); % which a prime does the policy fn prescribe?
-        MuNew(:, apr_ind) = MuNew(:, apr_ind) +[zprob(z_ind(ii),1)*Mu(z_ind(ii),a_ind(ii));zprob(z_ind(ii),2)*Mu(z_ind(ii),a_ind(ii));zprob(z_ind(ii),3)*Mu(z_ind(ii),a_ind(ii));zprob(z_ind(ii),4)*Mu(z_ind(ii),a_ind(ii));zprob(z_ind(ii),5)*Mu(z_ind(ii),a_ind(ii))];
+        MuNew(:, apr_ind) = MuNew(:, apr_ind) +(zprob(z_ind(ii),:)*Mu(z_ind(ii),a_ind(ii)))';
         % which mass of households goes to which exogenous state?
        end
        m_tol=max(max(abs(MuNew-Mu)));
        Mu=MuNew;
      end     
 
- aggsav=Mu(1,:)*a'+Mu(2,:)*a'+Mu(3,:)*a'+Mu(4,:)*a'+Mu(5,:)*a';
+ aggsav=Mu(:).*pol_fn(:);
  d=abs(k_guess-aggsav);
- if k_guess<aggsav
-     k_guess=k_guess+abs(k_guess-aggsav)/2;
- else k_guess=k_guess-abs(k_guess-aggsav)/2;
+ if k_guess>aggsav
+     k_min=k_guess;
  end
- k_guess;
+ if k_guess<aggsav;
+     k_max=k_guess;
+ end
  d;
 end
-
-%%%%%%%%%question 6
-plot(a,pol_fn(1,:),a,pol_fn(2,:),a,pol_fn(3,:),a,pol_fn(4,:),a,pol_fn(5,:)),legend('z1','z2','z3','z4','z5');
-
-%gini
-p=[Mu(1,:);Mu(2,:);Mu(3,:);Mu(4,:);Mu(5,:)];
-wealth=[a;a;a;a;a];
-wg=gini(p,wealth,true);
-title(['wealth gini index=',num2str(wg)]);
-
